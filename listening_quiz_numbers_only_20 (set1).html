@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Numbers Listening Quiz (20)</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f8ff; text-align: center; padding: 20px; }
+    .question-box { background: #ffffff; padding: 20px; margin: 20px auto; border-radius: 15px; box-shadow: 0 0 10px #ccc; max-width: 600px; }
+    button { margin: 8px; padding: 10px 20px; font-size: 16px; border-radius: 10px; border: none; cursor: pointer; }
+    .choice-button { background-color: #e0f7fa; font-weight: bold; }
+    .choice-button:hover { background-color: #b2ebf2; }
+    .control-button { background-color: #ffe0b2; }
+    .hidden { display: none; }
+    .result { font-size: 20px; margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+<div id="start-screen" class="question-box">
+  <h2>🎯 Listen & Guess the Number</h2>
+  <p><input id="player-name" placeholder="Enter your name" style="padding:10px; font-size:16px; width:60%; border-radius:8px;" /></p>
+  <button class="control-button" onclick="startGame()">▶️ Start Game</button>
+</div>
+
+<h1>🔢 Numbers Listening Quiz</h1>
+<div id="quiz-container" class="question-box hidden">
+  <p id="question-number"></p>
+  <p><button onclick="playNormal()">🔊 Play</button>
+     <button onclick="playSlow()">🐢 Slow</button>
+     <button onclick="revealText()">👁 Show Sentence</button></p>
+  <p id="question-text" style="font-style: italic; display:none;"></p>
+  <div id="choices"></div>
+  <div id="feedback" class="result"></div>
+</div>
+
+<div id="result-screen" class="question-box hidden">
+  <h2>🎉 <span id="player-name-display"></span>'s Score: <span id="final-score"></span> / 60</h2>
+  <div id="answer-list" style="text-align:left;margin-top:20px;"></div><br>
+  <button onclick="location.reload()">🔁 Try Again</button>
+</div>
+
+<script>
+const quiz = [{"question": "What number comes after twenty-three?", "answer": "twenty-four", "options": ["twenty-five", "twenty-one", "twenty-four", "twenty-two"]}, {"question": "What number comes before thirty?", "answer": "twenty-nine", "options": ["twenty-eight", "twenty-nine", "thirty", "thirty-one"]}, {"question": "What is ten plus five?", "answer": "fifteen", "options": ["sixteen", "twelve", "fifteen", "thirteen"]}, {"question": "What is twenty minus six?", "answer": "fourteen", "options": ["fifteen", "thirteen", "fourteen", "twelve"]}, {"question": "What number is double of seven?", "answer": "fourteen", "options": ["fifteen", "fourteen", "twelve", "thirteen"]}, {"question": "What number is half of eighteen?", "answer": "nine", "options": ["ten", "eleven", "eight", "nine"]}, {"question": "How many sides does a triangle have?", "answer": "three", "options": ["five", "three", "four", "two"]}, {"question": "What number comes between thirty and thirty-two?", "answer": "thirty-one", "options": ["thirty", "twenty-nine", "thirty-three", "thirty-one"]}, {"question": "What is five times two?", "answer": "ten", "options": ["eight", "nine", "ten", "twelve"]}, {"question": "How many days are in a week?", "answer": "seven", "options": ["five", "seven", "eight", "six"]}, {"question": "What is one more than ninety-nine?", "answer": "one hundred", "options": ["one hundred", "eighty", "ninety-eight", "ninety-seven"]}, {"question": "What is twenty-five minus five?", "answer": "twenty", "options": ["eighteen", "twenty", "fifteen", "twenty-one"]}, {"question": "How many legs does an insect usually have?", "answer": "six", "options": ["six", "eight", "four", "ten"]}, {"question": "What number is one-third of nine?", "answer": "three", "options": ["three", "four", "two", "five"]}, {"question": "What number comes after eleven?", "answer": "twelve", "options": ["twelve", "fourteen", "thirteen", "ten"]}, {"question": "What is the square root of nine?", "answer": "three", "options": ["three", "two", "five", "four"]}, {"question": "What number is ten more than forty?", "answer": "fifty", "options": ["fifty", "sixty", "forty-five", "thirty"]}, {"question": "How many hours are in a day?", "answer": "twenty-four", "options": ["twelve", "twenty-five", "twenty-three", "twenty-four"]}, {"question": "What is seven plus eight?", "answer": "fifteen", "options": ["seventeen", "sixteen", "fourteen", "fifteen"]}, {"question": "What number is five less than twenty?", "answer": "fifteen", "options": ["fourteen", "sixteen", "fifteen", "seventeen"]}];
+let current = 0, score = 0, mode = "normal", playerName = "", revealed = false;
+
+function playNormal() {
+  mode = "normal"; revealed = false;
+  speak(quiz[current].question, 1.0);
+}
+
+function playSlow() {
+  mode = "slow";
+  speak(quiz[current].question, 0.6);
+}
+
+function revealText() {
+  document.getElementById("question-text").style.display = "block";
+  mode = "show";
+  revealed = true;
+}
+
+function speak(text, rate) {
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  utter.rate = rate;
+  speechSynthesis.speak(utter);
+}
+
+function startGame() {
+  const nameInput = document.getElementById("player-name").value.trim();
+  if (!nameInput) { alert("Please enter your name before starting."); return; }
+  playerName = nameInput;
+  document.getElementById("player-name-display").innerText = playerName;
+  document.getElementById("start-screen").classList.add("hidden");
+  document.getElementById("quiz-container").classList.remove("hidden");
+  loadQuestion();
+}
+
+function loadQuestion() {
+  revealed = false;
+  document.getElementById("question-number").innerText = "Question " + (current + 1) + " of " + quiz.length;
+  document.getElementById("question-text").innerText = quiz[current].question;
+  document.getElementById("question-text").style.display = "none";
+  document.getElementById("feedback").innerText = "";
+  const choicesDiv = document.getElementById("choices");
+  choicesDiv.innerHTML = "";
+  quiz[current].options.forEach(option => {
+    const btn = document.createElement("button");
+    btn.innerText = option;
+    btn.className = "choice-button";
+    btn.onclick = () => checkAnswer(option);
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function checkAnswer(selected) {
+  let pts = revealed ? 1 : (mode === "normal" ? 3 : mode === "slow" ? 2 : 1);
+  if (selected === quiz[current].answer) {
+    score += pts;
+    document.getElementById("feedback").innerText = "✅ Correct! (+" + pts + " pts)";
+  } else {
+    document.getElementById("feedback").innerText = "❌ Wrong! Correct answer: " + quiz[current].answer;
+  }
+  setTimeout(() => {
+    current++;
+    if (current >= quiz.length) showResult();
+    else loadQuestion();
+  }, 1500);
+}
+
+function showResult() {
+  document.getElementById("quiz-container").classList.add("hidden");
+  document.getElementById("result-screen").classList.remove("hidden");
+  document.getElementById("final-score").innerText = score;
+  let answerList = document.getElementById("answer-list");
+  answerList.innerHTML = "<h3>📋 All Answers:</h3>" + quiz.map(function(q, i) {
+    return `<div><strong>Q${i+1}:</strong> ${q.question}<br>✅ <em>${q.answer}</em></div><br>`;
+  }).join("");
+}
+</script>
+</body>
+</html>
